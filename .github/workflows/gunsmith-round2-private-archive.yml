@@ -1,0 +1,290 @@
+name: 第二轮免费商用枪械私人归档
+
+on:
+  push:
+    branches:
+      - temp/gunsmith-round2-20261012
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  archive:
+    name: 下载、审计并拆分私人归档
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: 检出临时分支
+        uses: actions/checkout@v4
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 安装依赖
+        run: python -m pip install --disable-pip-version-check requests==2.32.5
+
+      - name: 下载第二轮来源
+        env:
+          OUTPUT_DIR: bundle-round2
+          PYTHONUNBUFFERED: '1'
+        run: python scripts/collect_free_commercial_guns_round2.py
+
+      - name: 校验来源数量
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          result = json.loads(Path('bundle-round2/acceptance.json').read_text(encoding='utf-8'))
+          if result['sourceCount'] < 28:
+              raise SystemExit(f"有效来源过少：{result['sourceCount']}")
+          if result['fileCount'] < 30:
+              raise SystemExit(f"来源文件过少：{result['fileCount']}")
+          print(json.dumps(result, ensure_ascii=False, indent=2))
+          PY
+
+      - name: 拆分为云盘可接收的分卷
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import shutil
+          from pathlib import Path
+
+          ROOT = Path('bundle-round2')
+          PACKAGES = ROOT / 'packages'
+          TRANSFER = Path('transfer-round2')
+          LIMIT = 52 * 1024 * 1024
+          TRANSFER.mkdir()
+
+          def sha256(path: Path) -> str:
+              digest = hashlib.sha256()
+              with path.open('rb') as stream:
+                  for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                      digest.update(chunk)
+              return digest.hexdigest()
+
+          items: list[dict[str, object]] = []
+          originals: list[dict[str, object]] = []
+          split_root = Path('split-round2')
+          for source in sorted(path for path in PACKAGES.rglob('*') if path.is_file()):
+              relative = source.relative_to(PACKAGES)
+              original = {
+                  'path': relative.as_posix(),
+                  'bytes': source.stat().st_size,
+                  'sha256': sha256(source),
+                  'parts': [],
+              }
+              if source.stat().st_size <= LIMIT:
+                  items.append({'source': source, 'relative': Path('files') / relative, 'bytes': source.stat().st_size, 'original': relative.as_posix()})
+              else:
+                  target_dir = split_root / relative.parent
+                  target_dir.mkdir(parents=True, exist_ok=True)
+                  with source.open('rb') as stream:
+                      index = 1
+                      while True:
+                          payload = stream.read(LIMIT)
+                          if not payload:
+                              break
+                          target = target_dir / f'{source.name}.part-{index:03d}'
+                          target.write_bytes(payload)
+                          record = {'name': target.name, 'bytes': target.stat().st_size, 'sha256': sha256(target)}
+                          original['parts'].append(record)
+                          items.append({'source': target, 'relative': Path('parts') / relative.parent / target.name, 'bytes': target.stat().st_size, 'original': relative.as_posix()})
+                          index += 1
+              originals.append(original)
+
+          chunks: list[dict[str, object]] = []
+          for item in sorted(items, key=lambda value: (-int(value['bytes']), str(value['relative']))):
+              placed = False
+              for chunk in chunks:
+                  if int(chunk['bytes']) + int(item['bytes']) <= LIMIT:
+                      chunk['items'].append(item)
+                      chunk['bytes'] = int(chunk['bytes']) + int(item['bytes'])
+                      placed = True
+                      break
+              if not placed:
+                  chunks.append({'bytes': int(item['bytes']), 'items': [item]})
+
+          if len(chunks) > 16:
+              raise SystemExit(f'分卷数量超过工作流上限：{len(chunks)}')
+
+          chunk_records = []
+          for index, chunk in enumerate(chunks, start=1):
+              chunk_dir = TRANSFER / f'chunk-{index:02d}'
+              records = []
+              for item in chunk['items']:
+                  destination = chunk_dir / item['relative']
+                  destination.parent.mkdir(parents=True, exist_ok=True)
+                  shutil.copy2(item['source'], destination)
+                  records.append({
+                      'path': item['relative'].as_posix(),
+                      'original': item['original'],
+                      'bytes': destination.stat().st_size,
+                      'sha256': sha256(destination),
+                  })
+              (chunk_dir / 'CHUNK_MANIFEST.json').write_text(
+                  json.dumps({'schemaVersion': 1, 'chunk': index, 'bytes': chunk['bytes'], 'files': records}, ensure_ascii=False, indent=2, sort_keys=True) + '\n',
+                  encoding='utf-8',
+              )
+              chunk_records.append({'chunk': index, 'bytes': chunk['bytes'], 'fileCount': len(records)})
+
+          reassembly = {
+              'schemaVersion': 1,
+              'chunkLimitBytes': LIMIT,
+              'chunkCount': len(chunks),
+              'chunks': chunk_records,
+              'originals': originals,
+              'restore': '提取全部分卷；files/ 下文件直接按路径合并，parts/ 下同名 .part-* 按序 cat 后校验原始 SHA-256。',
+          }
+          (TRANSFER / 'REASSEMBLY.json').write_text(json.dumps(reassembly, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print(json.dumps({'chunks': len(chunks), 'originals': len(originals), 'bytes': sum(int(item['bytes']) for item in items)}, ensure_ascii=False))
+          PY
+
+      - name: 上传第二轮目录与许可证清单
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-round2-catalog
+          path: |
+            bundle-round2/README_FIRST.md
+            bundle-round2/archive-manifest.json
+            bundle-round2/acceptance.json
+            bundle-round2/SHA256SUMS.txt
+            transfer-round2/REASSEMBLY.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传分卷 01
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-round2-chunk-01
+          path: transfer-round2/chunk-01
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+      - name: 上传分卷 02
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-round2-chunk-02
+          path: transfer-round2/chunk-02
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+      - name: 上传分卷 03
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-round2-chunk-03
+          path: transfer-round2/chunk-03
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+      - name: 上传分卷 04
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-round2-chunk-04
+          path: transfer-round2/chunk-04
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+      - name: 上传分卷 05
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-round2-chunk-05
+          path: transfer-round2/chunk-05
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+      - name: 上传分卷 06
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-round2-chunk-06
+          path: transfer-round2/chunk-06
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+      - name: 上传分卷 07
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-round2-chunk-07
+          path: transfer-round2/chunk-07
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+      - name: 上传分卷 08
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-round2-chunk-08
+          path: transfer-round2/chunk-08
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+      - name: 上传分卷 09
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-round2-chunk-09
+          path: transfer-round2/chunk-09
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+      - name: 上传分卷 10
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-round2-chunk-10
+          path: transfer-round2/chunk-10
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+      - name: 上传分卷 11
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-round2-chunk-11
+          path: transfer-round2/chunk-11
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+      - name: 上传分卷 12
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-round2-chunk-12
+          path: transfer-round2/chunk-12
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+      - name: 上传分卷 13
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-round2-chunk-13
+          path: transfer-round2/chunk-13
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+      - name: 上传分卷 14
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-round2-chunk-14
+          path: transfer-round2/chunk-14
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+      - name: 上传分卷 15
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-round2-chunk-15
+          path: transfer-round2/chunk-15
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+      - name: 上传分卷 16
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-round2-chunk-16
+          path: transfer-round2/chunk-16
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
