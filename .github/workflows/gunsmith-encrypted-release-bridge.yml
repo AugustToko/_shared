@@ -1,0 +1,102 @@
+name: 枪械素材加密中转
+
+on:
+  push:
+    branches:
+      - temp/gunsmith-archive-bridge-20261012
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  archive:
+    name: 下载、加密并发布临时中转包
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: 检出临时分支
+        uses: actions/checkout@v4
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 安装依赖
+        run: python -m pip install --disable-pip-version-check requests==2.32.5
+
+      - name: 下载并固化来源
+        env:
+          OUTPUT_DIR: bundle
+          PYTHONUNBUFFERED: '1'
+        run: python scripts/collect_free_commercial_guns.py
+
+      - name: 校验下载结果
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          result = json.loads(Path('bundle/acceptance.json').read_text(encoding='utf-8'))
+          if result['sourceCount'] < 12:
+              raise SystemExit(f"有效来源过少：{result['sourceCount']}")
+          if result['fileCount'] < 15:
+              raise SystemExit(f"来源文件过少：{result['fileCount']}")
+          print(json.dumps(result, ensure_ascii=False, indent=2))
+          PY
+
+      - name: 创建加密归档
+        run: |
+          set -euo pipefail
+          tar --zstd -cf FreeCommercialGunSources-20261012.tar.zst bundle
+          openssl rand -base64 48 > archive.pass
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 600000 \
+            -in FreeCommercialGunSources-20261012.tar.zst \
+            -out FreeCommercialGunSources-20261012.tar.zst.enc \
+            -pass file:archive.pass
+          cat > bridge-public.pem <<'PEM'
+          -----BEGIN PUBLIC KEY-----
+          MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAw1dO4enrBTyXgWId1bwl
+          7+dJGV7jYzoxD1JmxrPslkh1DY3FxaHpVvGcso4Z9yqBq/O4ue6KsNJeh+6FONFs
+          nqHkNvW6pDxcDHQWvytf1pGbFy/mQFIuxlJHferzUBo0S1LbEE2/pPh6BF9aCE3V
+          kyyQwXOJUj7FGz0BIZ63ZSf+6BKnzynCkXqnFi4fWnnEpjX0YhsU1klsOdwxT3wl
+          D9cebLu/6XE4+L/g7EleXI0s5ZChW+ScWS81F7Flsxnq+ZGDnFltpMxxWJkmuJjd
+          iuaYpiMw1A1BA+4jq+c3yFM5DoFfIfPuUwOTs3VXleTxjeLc8fAe+eXEvgusiqK+
+          Hs3ERoAKgL50rLhKpgq0wsbSPGsFkEgeMoWaDZFd3l38tmI1uUdQXXSIRjqEZD1d
+          ki6tZYkg+Mrn6ell2ouIaYOZfOczaDJbh3mwaX1763e0mqDfsowLCv9gYm0tEGBf
+          yO3vwkv5xhUcIPfb789jscs9SGYTLNDVeo2L5TCBwTZzAgMBAAE=
+          -----END PUBLIC KEY-----
+          PEM
+          openssl pkeyutl -encrypt -pubin -inkey bridge-public.pem \
+            -pkeyopt rsa_padding_mode:oaep \
+            -pkeyopt rsa_oaep_md:sha256 \
+            -in archive.pass \
+            -out FreeCommercialGunSources-20261012.pass.rsa
+          sha256sum \
+            FreeCommercialGunSources-20261012.tar.zst \
+            FreeCommercialGunSources-20261012.tar.zst.enc \
+            FreeCommercialGunSources-20261012.pass.rsa \
+            > BRIDGE_SHA256SUMS.txt
+          rm -f archive.pass bridge-public.pem FreeCommercialGunSources-20261012.tar.zst
+          du -sh bundle FreeCommercialGunSources-20261012.tar.zst.enc
+          cat BRIDGE_SHA256SUMS.txt
+
+      - name: 创建临时加密发布
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: gunsmith-bridge-20261012
+        run: |
+          set -euo pipefail
+          gh release delete "$TAG" --cleanup-tag -y >/dev/null 2>&1 || true
+          gh release create "$TAG" \
+            --target "$GITHUB_SHA" \
+            --title "Masamune 枪械素材加密中转 2026-10-12" \
+            --prerelease \
+            --notes "临时加密中转包。源文件使用 AES-256-CBC/PBKDF2 加密，随机口令仅以 RSA-OAEP 密文发布；传输完成后删除。" \
+            FreeCommercialGunSources-20261012.tar.zst.enc \
+            FreeCommercialGunSources-20261012.pass.rsa \
+            BRIDGE_SHA256SUMS.txt \
+            bundle/archive-manifest.json \
+            bundle/acceptance.json \
+            bundle/README_FIRST.md
