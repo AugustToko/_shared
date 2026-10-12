@@ -46,6 +46,81 @@ jobs:
           print(json.dumps(result, ensure_ascii=False, indent=2))
           PY
 
+      - name: 拆分超大来源包
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import shutil
+          from pathlib import Path
+
+          transfer = Path('transfer')
+          transfer.mkdir()
+
+          def sha256(path: Path) -> str:
+              digest = hashlib.sha256()
+              with path.open('rb') as stream:
+                  for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                      digest.update(chunk)
+              return digest.hexdigest()
+
+          def source_files(source_id: str) -> list[Path]:
+              root = Path('bundle/packages') / source_id
+              result = sorted((path for path in root.rglob('*') if path.is_file()), key=lambda path: (-path.stat().st_size, path.name))
+              if not result:
+                  raise SystemExit(f'来源为空：{source_id}')
+              return result
+
+          manifest: dict[str, object] = {'schemaVersion': 1, 'sources': {}}
+
+          stein = source_files('stein-classic-weapons')
+          stein_main = stein[0]
+          main_dir = transfer / 'stein-main'
+          main_dir.mkdir()
+          chunk_size = 60 * 1024 * 1024
+          chunks = []
+          with stein_main.open('rb') as stream:
+              index = 1
+              while True:
+                  payload = stream.read(chunk_size)
+                  if not payload:
+                      break
+                  target = main_dir / f'{stein_main.name}.part-{index:03d}'
+                  target.write_bytes(payload)
+                  chunks.append({'name': target.name, 'bytes': target.stat().st_size, 'sha256': sha256(target)})
+                  index += 1
+          stein_secondary_dir = transfer / 'stein-secondary'
+          stein_secondary_dir.mkdir()
+          secondary = []
+          for source in stein[1:]:
+              target = stein_secondary_dir / source.name
+              shutil.copy2(source, target)
+              secondary.append({'name': target.name, 'bytes': target.stat().st_size, 'sha256': sha256(target)})
+          manifest['sources']['stein-classic-weapons'] = {
+              'main': {'name': stein_main.name, 'bytes': stein_main.stat().st_size, 'sha256': sha256(stein_main), 'chunks': chunks},
+              'secondary': secondary,
+              'restore': f"cat '{stein_main.name}.part-'* > '{stein_main.name}'",
+          }
+
+          polyyai = source_files('polyyai-low-poly-guns')
+          polyyai_records = []
+          for label, source in zip(('main', 'secondary'), polyyai, strict=True):
+              target_dir = transfer / f'polyyai-{label}'
+              target_dir.mkdir()
+              target = target_dir / source.name
+              shutil.copy2(source, target)
+              polyyai_records.append({'group': label, 'name': target.name, 'bytes': target.stat().st_size, 'sha256': sha256(target)})
+          manifest['sources']['polyyai-low-poly-guns'] = polyyai_records
+
+          (transfer / 'LARGE_SOURCE_REASSEMBLY.json').write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+          print(json.dumps(manifest, ensure_ascii=False, indent=2))
+          PY
+
       - name: 上传归档目录与许可证清单
         uses: actions/upload-artifact@v4
         with:
@@ -55,24 +130,61 @@ jobs:
             bundle/archive-manifest.json
             bundle/acceptance.json
             bundle/SHA256SUMS.txt
+            transfer/LARGE_SOURCE_REASSEMBLY.json
           if-no-files-found: error
           compression-level: 0
           retention-days: 1
 
-      - name: 上传 Stein 经典枪械来源
+      - name: 上传 Stein 主包分片一
         uses: actions/upload-artifact@v4
         with:
-          name: gunsmith-source-stein-classic-weapons
-          path: bundle/packages/stein-classic-weapons
+          name: gunsmith-source-stein-main-part-001
+          path: transfer/stein-main/*.part-001
           if-no-files-found: error
           compression-level: 0
           retention-days: 1
 
-      - name: 上传 Polyyai 低多边形枪械来源
+      - name: 上传 Stein 主包分片二
         uses: actions/upload-artifact@v4
         with:
-          name: gunsmith-source-polyyai-low-poly-guns
-          path: bundle/packages/polyyai-low-poly-guns
+          name: gunsmith-source-stein-main-part-002
+          path: transfer/stein-main/*.part-002
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传 Stein 主包分片三
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-source-stein-main-part-003
+          path: transfer/stein-main/*.part-003
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传 Stein 次要来源包
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-source-stein-secondary
+          path: transfer/stein-secondary
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传 Polyyai 主来源包
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-source-polyyai-main
+          path: transfer/polyyai-main
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传 Polyyai 次要来源包
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-source-polyyai-secondary
+          path: transfer/polyyai-secondary
           if-no-files-found: error
           compression-level: 0
           retention-days: 1
