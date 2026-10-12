@@ -46,11 +46,73 @@ jobs:
           print(json.dumps(result, ensure_ascii=False, indent=2))
           PY
 
-      - name: 上传私人归档工件
+      - name: 上传归档目录与许可证清单
         uses: actions/upload-artifact@v4
         with:
-          name: free-commercial-gun-sources-20261012
-          path: bundle
+          name: gunsmith-catalog-20261012
+          path: |
+            bundle/README_FIRST.md
+            bundle/archive-manifest.json
+            bundle/acceptance.json
+            bundle/SHA256SUMS.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传 Stein 经典枪械来源
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-source-stein-classic-weapons
+          path: bundle/packages/stein-classic-weapons
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传 Polyyai 低多边形枪械来源
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-source-polyyai-low-poly-guns
+          path: bundle/packages/polyyai-low-poly-guns
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传第一组 CC0 枪械来源
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-sources-cc0-core-a
+          path: |
+            bundle/packages/kenney-blaster-kit
+            bundle/packages/mehrasaur-3d-weapons
+            bundle/packages/texnist-voxel-weapons
+            bundle/packages/peu-blasters-free
+            bundle/packages/cosmo-low-poly-guns
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传第二组免费商用枪械来源
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-sources-commercial-core-b
+          path: |
+            bundle/packages/dark-palette-weapon-arsenal
+            bundle/packages/retro-spud-pixel-arsenal
+            bundle/packages/heyheythere-psx-firearms-free
+            bundle/packages/heyheythere-psx-fps-arms-free
+            bundle/packages/lazy-spar7an-psx-gun-pack
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传 OpenGameArt 枪械来源
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-sources-opengameart
+          path: |
+            bundle/packages/opengameart-oldschool-afps
+            bundle/packages/opengameart-soviet-assault-rifle
+            bundle/packages/opengameart-vss
           if-no-files-found: error
           compression-level: 0
           retention-days: 1
