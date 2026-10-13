@@ -1,10 +1,10 @@
 {
-  "id": "gintoki-m16",
-  "title": "Gintoki1234 M16",
-  "url": "https://gintoki1234.itch.io/m16",
-  "includePattern": "^M16 by Gintoki1234\\.zip$",
+  "id": "gintoki-m16-a4",
+  "title": "Gintoki1234 M16 A4",
+  "url": "https://gintoki1234.itch.io/m16-a4",
+  "includePattern": "^M16 A4 by Gintoki1234\\.zip$",
   "license": "CC-BY-4.0",
   "attribution": "Gintoki1234",
-  "scope": "M16 简单 Rig、30 发弹匣、5.56×45mm 弹药、弹壳与弹头",
-  "mountEvidence": "RIGGED_SEPARATE_MAGAZINE_AND_AMMO"
+  "scope": "M16 A4 简单 Rig、可拆提把、30 发弹匣、5.56×45mm 弹药、弹壳与弹头",
+  "mountEvidence": "RIGGED_DETACHABLE_CARRY_HANDLE_MAGAZINE_AND_AMMO"
 }
