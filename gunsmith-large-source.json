@@ -1,10 +1,9 @@
 {
-  "id": "gintoki-sw629-magnum",
-  "title": "Gintoki1234 Smith & Wesson 629 Classic Magnum",
-  "url": "https://gintoki1234.itch.io/smith-wessons-629-classic-44-magnum",
-  "includePattern": "^Wesson & Smith 629 Classic Magnum\\.zip$",
-  "license": "CC-BY-4.0",
-  "attribution": "Gintoki1234",
-  "scope": "S&W 629 左轮完整 Rig、子弹与快速装弹器，4K 枪体纹理",
-  "mountEvidence": "RIGGED_REVOLVER_AMMO_AND_SPEEDLOADER"
+  "id": "gintoki-12-low-poly-guns",
+  "title": "Gintoki1234 12 Low Poly Guns",
+  "url": "https://gintoki1234.itch.io/12-low-poly-guns",
+  "includePattern": "^12 Low Poly Guns\\.zip$",
+  "license": "CC0-1.0",
+  "scope": "12 个低面数枪械和 3 个弹药模型；弹匣、扳机等为独立对象",
+  "mountEvidence": "SEPARATE_MAGAZINE_TRIGGER_AND_PARTS"
 }
