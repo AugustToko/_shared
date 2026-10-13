@@ -1,9 +1,10 @@
 {
-  "id": "kuptchi-psx-weapons",
-  "title": "Kuptchi PSX-Weapons Assets Free Pack",
-  "url": "https://kuptchi.itch.io/f",
-  "includePattern": "^RetroWeaponPack_V1\\.zip$",
-  "license": "FREE_COMMERCIAL_NO_ATTRIBUTION_NO_RESALE",
-  "scope": "4 把完整武器、独立弹匣/子弹/弹壳、完整 Rig、80+ 第一人称手臂动画、FBX 与 Blend",
-  "mountEvidence": "FULLY_RIGGED_SEPARATE_AMMO_AND_MAGAZINES"
+  "id": "gintoki-mp5-a2",
+  "title": "Gintoki1234 MP5 A2",
+  "url": "https://gintoki1234.itch.io/mp5-a2",
+  "includePattern": "^MP5 A2 by Gintoki1234\\.zip$",
+  "license": "CC-BY-4.0",
+  "attribution": "Gintoki1234",
+  "scope": "MP5 A2 简单 Rig、独立弹匣、9mm 弹药、弹壳与弹头、4K 纹理",
+  "mountEvidence": "RIGGED_SEPARATE_MAGAZINE_AND_AMMO"
 }
