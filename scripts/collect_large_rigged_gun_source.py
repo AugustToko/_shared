@@ -107,26 +107,33 @@ def download_itch(config: dict[str, object], source_root: Path) -> Path:
         data=request_body,
         headers={"X-Requested-With": "XMLHttpRequest", "Referer": page_url},
     )
-    download_page_url = str(redirect.json()["url"])
-    download_page = retry_request("GET", download_page_url)
-    csrf2 = parse_csrf(download_page.text) or csrf
-    page_uploads = parse_uploads(download_page.text)
-    if page_uploads:
-        uploads = page_uploads
+    redirect_payload = redirect.json()
+    download_page_url = redirect_payload.get("url")
+    csrf2 = csrf
+    file_referer = page_url
+    if download_page_url:
+        download_page_url = str(download_page_url)
+        download_page = retry_request("GET", download_page_url)
+        csrf2 = parse_csrf(download_page.text) or csrf
+        page_uploads = parse_uploads(download_page.text)
+        if page_uploads:
+            uploads = page_uploads
+        file_referer = download_page_url
 
     include = re.compile(str(config["includePattern"]), re.I)
     selected = [upload for upload in uploads if include.search(upload["name"])]
     if len(selected) != 1:
         raise RuntimeError(f"下载项匹配数量不是 1：{[item['name'] for item in selected]}; 全部={uploads}")
     upload = selected[0]
+    # 付费页面中的免费 Demo 不会返回 download_url 页面，直接使用原页面 CSRF 获取文件地址。
     file_response = retry_request(
         "POST",
         f"{page_url}/file/{upload['id']}",
         data={"csrf_token": csrf2},
-        headers={"X-Requested-With": "XMLHttpRequest", "Referer": download_page_url},
+        headers={"X-Requested-With": "XMLHttpRequest", "Referer": file_referer},
     )
     source_path = source_root / safe_name(upload["name"])
-    stream_download(str(file_response.json()["url"]), source_path, download_page_url)
+    stream_download(str(file_response.json()["url"]), source_path, file_referer)
     return source_path
 
 
