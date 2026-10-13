@@ -1,9 +1,10 @@
 {
-  "id": "gintoki-12-low-poly-guns",
-  "title": "Gintoki1234 12 Low Poly Guns",
-  "url": "https://gintoki1234.itch.io/12-low-poly-guns",
-  "includePattern": "^12 Low Poly Guns\\.zip$",
-  "license": "CC0-1.0",
-  "scope": "12 个低面数枪械和 3 个弹药模型；弹匣、扳机等为独立对象",
-  "mountEvidence": "SEPARATE_MAGAZINE_TRIGGER_AND_PARTS"
+  "id": "redpolar-psx-slasher-free",
+  "title": "Redpolar PSX Slasher Guns Free",
+  "url": "https://redpolar.itch.io/psxslasherfirearms",
+  "includePattern": "^PSXSlasherGuns_FREE\\.zip$",
+  "license": "FREE_COMMERCIAL_NO_REDISTRIBUTION",
+  "attribution": "redpolar",
+  "scope": "免费样例包含手枪与上下双管霰弹枪；全部武器模块化，附件可拆，并具备枪栓、拉机柄与弹匣等功能部件",
+  "mountEvidence": "MODULAR_DETACHABLE_ATTACHMENTS_AND_FUNCTIONAL_PARTS"
 }
