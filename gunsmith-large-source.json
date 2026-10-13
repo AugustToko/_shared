@@ -1,10 +1,10 @@
 {
-  "id": "gintoki-uzi",
-  "title": "Gintoki1234 UZI",
-  "url": "https://gintoki1234.itch.io/uzi",
-  "includePattern": "^UZI by Gintoki1234\\.zip$",
+  "id": "gintoki-m16",
+  "title": "Gintoki1234 M16",
+  "url": "https://gintoki1234.itch.io/m16",
+  "includePattern": "^M16 by Gintoki1234\\.zip$",
   "license": "CC-BY-4.0",
   "attribution": "Gintoki1234",
-  "scope": "UZI Rig、伸缩枪托动画、独立弹匣与 9mm 弹药",
-  "mountEvidence": "RIGGED_ANIMATED_STOCK_AND_SEPARATE_MAGAZINE"
+  "scope": "M16 简单 Rig、30 发弹匣、5.56×45mm 弹药、弹壳与弹头",
+  "mountEvidence": "RIGGED_SEPARATE_MAGAZINE_AND_AMMO"
 }
