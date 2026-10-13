@@ -1,0 +1,155 @@
+name: 大型免费商用枪械来源分片归档
+
+on:
+  push:
+    branches:
+      - temp/gunsmith-large-rigged-20261013
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  archive:
+    name: 下载并切分单个大型枪械来源
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: 检出临时归档分支
+        uses: actions/checkout@v4
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 安装依赖
+        run: python -m pip install --disable-pip-version-check requests==2.32.5
+
+      - name: 清理上一个大型来源的中转产物
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?per_page=100" --paginate \
+            --jq '.artifacts[] | select(.name | startswith("gunsmith-large-")) | .id' \
+            | while read -r artifact_id; do
+                [ -n "$artifact_id" ] || continue
+                gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id"
+              done
+
+      - name: 读取来源身份
+        id: config
+        run: |
+          set -euo pipefail
+          source_id=$(python -c "import json; print(json.load(open('gunsmith-large-source.json'))['id'])")
+          echo "source_id=$source_id" >> "$GITHUB_OUTPUT"
+
+      - name: 下载并生成分片
+        run: |
+          python scripts/collect_large_rigged_gun_source.py \
+            --config gunsmith-large-source.json \
+            --output output \
+            --part-bytes 75000000
+          du -sh output
+          find output -type f -printf '%s %p\n' | sort -nr
+
+      - name: 上传来源目录
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-large-${{ steps.config.outputs.source_id }}-catalog
+          path: output/catalog
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 1
+
+      - name: 上传分片 000
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-large-${{ steps.config.outputs.source_id }}-part-000
+          path: output/parts/*.part-000
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传分片 001
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-large-${{ steps.config.outputs.source_id }}-part-001
+          path: output/parts/*.part-001
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传分片 002
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-large-${{ steps.config.outputs.source_id }}-part-002
+          path: output/parts/*.part-002
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传分片 003
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-large-${{ steps.config.outputs.source_id }}-part-003
+          path: output/parts/*.part-003
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传分片 004
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-large-${{ steps.config.outputs.source_id }}-part-004
+          path: output/parts/*.part-004
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传分片 005
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-large-${{ steps.config.outputs.source_id }}-part-005
+          path: output/parts/*.part-005
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传分片 006
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-large-${{ steps.config.outputs.source_id }}-part-006
+          path: output/parts/*.part-006
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传分片 007
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-large-${{ steps.config.outputs.source_id }}-part-007
+          path: output/parts/*.part-007
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传分片 008
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-large-${{ steps.config.outputs.source_id }}-part-008
+          path: output/parts/*.part-008
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
+
+      - name: 上传分片 009
+        uses: actions/upload-artifact@v4
+        with:
+          name: gunsmith-large-${{ steps.config.outputs.source_id }}-part-009
+          path: output/parts/*.part-009
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 1
