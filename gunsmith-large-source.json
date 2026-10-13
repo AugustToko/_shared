@@ -1,10 +1,10 @@
 {
-  "id": "gintoki-m1903-a3",
-  "title": "Gintoki1234 M1903 A3 Springfield",
-  "url": "https://gintoki1234.itch.io/springfield-m1903-a3",
-  "includePattern": "^M1903 A3\\.zip$",
+  "id": "gintoki-sw629-magnum",
+  "title": "Gintoki1234 Smith & Wesson 629 Classic Magnum",
+  "url": "https://gintoki1234.itch.io/smith-wessons-629-classic-44-magnum",
+  "includePattern": "^Wesson & Smith 629 Classic Magnum\\.zip$",
   "license": "CC-BY-4.0",
   "attribution": "Gintoki1234",
-  "scope": "M1903 A3 简单 Rig、卡夹、.30-06 Springfield 弹药、弹壳与弹头",
-  "mountEvidence": "RIGGED_SEPARATE_CLIP_AND_AMMO"
+  "scope": "S&W 629 左轮完整 Rig、子弹与快速装弹器，4K 枪体纹理",
+  "mountEvidence": "RIGGED_REVOLVER_AMMO_AND_SPEEDLOADER"
 }
