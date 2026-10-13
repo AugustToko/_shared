@@ -1,10 +1,10 @@
 {
-  "id": "gintoki-glock-19-gen4",
-  "title": "Gintoki1234 Glock 19 Gen 4",
-  "url": "https://gintoki1234.itch.io/glock-19-gen-4",
-  "includePattern": "^Glock 19 Gen 4\\.zip$",
+  "id": "gintoki-uzi",
+  "title": "Gintoki1234 UZI",
+  "url": "https://gintoki1234.itch.io/uzi",
+  "includePattern": "^UZI by Gintoki1234\\.zip$",
   "license": "CC-BY-4.0",
   "attribution": "Gintoki1234",
-  "scope": "Glock 19 Gen 4 简单 Rig、独立 15 发弹匣、9mm 弹药、弹壳与弹头",
-  "mountEvidence": "RIGGED_SEPARATE_MAGAZINE_AND_AMMO"
+  "scope": "UZI Rig、伸缩枪托动画、独立弹匣与 9mm 弹药",
+  "mountEvidence": "RIGGED_ANIMATED_STOCK_AND_SEPARATE_MAGAZINE"
 }
