@@ -1,10 +1,10 @@
 {
-  "id": "gintoki-m16-a4",
-  "title": "Gintoki1234 M16 A4",
-  "url": "https://gintoki1234.itch.io/m16-a4",
-  "includePattern": "^M16 A4 by Gintoki1234\\.zip$",
+  "id": "gintoki-m1903-a3",
+  "title": "Gintoki1234 M1903 A3 Springfield",
+  "url": "https://gintoki1234.itch.io/m1903-a3",
+  "includePattern": "^M1903 A3 Springfield\\.zip$",
   "license": "CC-BY-4.0",
   "attribution": "Gintoki1234",
-  "scope": "M16 A4 简单 Rig、可拆提把、30 发弹匣、5.56×45mm 弹药、弹壳与弹头",
-  "mountEvidence": "RIGGED_DETACHABLE_CARRY_HANDLE_MAGAZINE_AND_AMMO"
+  "scope": "M1903 A3 简单 Rig、卡夹、.30-06 Springfield 弹药、弹壳与弹头",
+  "mountEvidence": "RIGGED_SEPARATE_CLIP_AND_AMMO"
 }
