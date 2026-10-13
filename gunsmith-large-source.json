@@ -1,10 +1,10 @@
 {
-  "id": "gintoki-remington-870",
-  "title": "Gintoki1234 Remington 870 Fieldmaster",
-  "url": "https://gintoki1234.itch.io/remington-pump-action-shotgun",
-  "includePattern": "^Remington 870 FieldMaster by Gintoki1234\\.zip$",
+  "id": "gintoki-glock-19-gen4",
+  "title": "Gintoki1234 Glock 19 Gen 4",
+  "url": "https://gintoki1234.itch.io/glock-19-gen-4",
+  "includePattern": "^Glock 19 Gen 4\\.zip$",
   "license": "CC-BY-4.0",
   "attribution": "Gintoki1234",
-  "scope": "Remington 870 泵动霰弹枪 Rig、实弹与击发弹壳、4K/2K 纹理",
-  "mountEvidence": "RIGGED_PUMP_ACTION_AND_SEPARATE_SHELLS"
+  "scope": "Glock 19 Gen 4 简单 Rig、独立 15 发弹匣、9mm 弹药、弹壳与弹头",
+  "mountEvidence": "RIGGED_SEPARATE_MAGAZINE_AND_AMMO"
 }
